@@ -1,0 +1,435 @@
+/* src/App.css */
+body{
+  background: linear-gradient(to top, rgb(140, 247, 140), rgb(21, 103, 21) 30%),
+              linear-gradient(to bottom, rgb(140, 247, 140) 40%, rgb(198, 244, 198) 60%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-blend-mode: multiply;
+  position: relative;
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+}
+
+body::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  width: 100%;
+  transform: skewX(-30deg);
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 5px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 5px),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+  background-size: 80px 80px, 80px 80px, 160px 160px;
+  opacity: 0.5;
+  pointer-events: none;
+
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  width: 100%;
+  transform: skewX(-30deg);
+  background: linear-gradient(45deg, 
+    rgba(255, 255, 255, 0.05) 25%, 
+    transparent 25%, 
+    transparent 50%, 
+    rgba(255, 255, 255, 0.05) 50%, 
+    rgba(255, 255, 255, 0.05) 75%, 
+    transparent 75%, 
+    transparent);
+  background-size: 60px 50px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+
+
+.spins-left {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #333;
+  margin: 15px 0;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.slots {
+  display: flex;
+  justify-content: center;
+  margin: 30px 0;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.slot {
+  width: 300px;
+  height: 60px;
+  position: relative;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5em;
+  background: rgb(1, 82, 1);
+  color: white;
+  transition: all 0.3s ease;
+  margin: 5px;
+  z-index: 1;
+}
+
+.slot::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  background: linear-gradient(to right, rgb(12, 194, 12), rgb(198, 244, 198),rgb(12, 194, 12));
+  border-radius: 18px;
+  z-index: -1;
+}
+
+.slot::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgb(1, 82, 1);
+  border-radius: 16px;
+  z-index: -1;
+}
+
+.slot.current {
+  box-shadow: 0 0 0 rgba(166, 255, 202, 0.5);
+  z-index: 2;
+}
+
+.slot.spinning {
+  animation: spin 0.5s ease-in-out infinite;
+}
+
+.buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+button {
+  padding: 15px 30px;
+  font-size: 1.2em;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  min-width: 160px;
+}
+
+.start-button {
+  position: relative;
+  background: linear-gradient(to right, rgb(12, 194, 12), rgb(26, 226, 26), rgb(12, 194, 12));
+  color: white;
+  z-index: 1;
+}
+
+.start-button::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  background: linear-gradient(to top ,rgb(157, 103, 10) ,rgb(255, 208, 126) 30% );
+  border-radius: 11px;
+  z-index: -1;
+}
+
+.start-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to right, rgb(12, 194, 12), rgb(26, 226, 26), rgb(12, 194, 12));
+  border-radius: 8px;
+  z-index: -1;
+}
+
+.start-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  filter: brightness(1.1);
+}
+
+.next-button {
+  background-color: #2196F3;
+  color: white;
+}
+
+.reset-button {
+  background-color: #f44336;
+  color: white;
+  margin-top: 20px;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.7;
+}
+
+.summary {
+  margin: 30px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  max-width: 400px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.summary h2 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.summary-stats {
+  font-size: 1.2em;
+  margin-bottom: 20px;
+}
+
+.summary-stats p {
+  margin: 10px 0;
+  padding: 8px;
+  background: #f8f8f8;
+  border-radius: 5px;
+}
+
+.history {
+  margin-top: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.history h3 {
+  margin-top: 0;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.history-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  font-size: 1.1em;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.current-results {
+  margin: 20px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  max-width: 400px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.current-results h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+  text-align: center;
+  font-weight: bold;
+}
+
+.results-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.result-item {
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #333;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.result-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+.rewards-page {
+  width: 100%;
+  max-width: 1200px;
+  padding: 20px;
+  box-sizing: border-box;
+  margin: 0 auto;
+  overflow-y: auto;
+  height: 100vh;
+}
+
+.rewards-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 20px;
+  padding: 20px;
+  box-sizing: border-box;
+  align-items: center;
+}
+
+.rewards-page h1 {
+  text-align: center;
+  color: #f1f0f0;
+  margin-bottom: 30px;
+  font-size: 2.5em;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.reward-card {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  border-radius: 15px;
+  padding: 0;
+  transition: transform 0.3s ease;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.reward-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.reward-header {
+  padding: 20px;
+  color: white;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1));
+}
+
+.reward-icon {
+  font-size: 28px;
+}
+
+.reward-details {
+  padding: 25px;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.reward-details p {
+  width: 100%;
+  max-width: 300px;
+  margin: 0;
+  font-size: 1.2em;
+  text-align: center;
+  padding: 15px 20px;
+  background: linear-gradient(to right, rgb(12, 194, 12), rgb(26, 226, 26), rgb(12, 194, 12));
+  color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.reward-details p:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.rewards-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 15px 30px;
+  font-size: 1.2em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.rewards-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  filter: brightness(1.1);
+}
+
+@media (max-width: 768px) {
+  .rewards-page {
+    padding: 10px;
+  }
+  
+  .reward-card {
+    max-width: 100%;
+  }
+  
+  .reward-details p {
+    max-width: 100%;
+  }
+}
