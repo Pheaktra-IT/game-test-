@@ -1,74 +1,44 @@
 /* src/App.css */
-body{
-  background: linear-gradient(to top, rgb(140, 247, 140), rgb(21, 103, 21) 30%),
-              linear-gradient(to bottom, rgb(140, 247, 140) 40%, rgb(198, 244, 198) 60%);
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  background-blend-mode: multiply;
-  position: relative;
-  color: #fff;
-  font-family: 'Poppins', sans-serif;
+body, html {
+  height: 100%;
   margin: 0;
-  padding: 0;
-  height: 100vh;
-  width: 100vw;
+  background: #359001;
+  background: linear-gradient(180deg, rgba(16, 69, 6, 1) 0%, rgb(59, 217, 2) 100%, rgba(255, 255, 255, 1) 52%);
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: -1;
 }
 
-body::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
+.grid {
+  position: absolute; /* Change from relative to absolute */
+  top: 60%; /* This will now work */
   left: 0;
-  right: 0;
-  height: 30%;
   width: 100%;
-  transform: skewX(-30deg);
+  height: 60%;
+  overflow: hidden; /* Prevent child elements from overflowing */
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 5px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 5px),
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
-  background-size: 80px 80px, 80px 80px, 160px 160px;
-  opacity: 0.5;
-  pointer-events: none;
-
+    linear-gradient(to right, rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
+  background-size: 70px 30px; /* Adjust the size of the grid pattern */
+  background-color: #104506; /* Fallback background color */
+  transform: perspective(800px) rotateX(60deg); /* Add 3D perspective */
+  transform-origin: top center; /* Adjust the origin for the rotation */
+  mask-image: linear-gradient(to bottom, transparent, black 70%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 70%);
 }
-
-body::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
+.slot-game-container{
+  top:50%;
   left: 0;
-  right: 0;
-  height: 30%;
+  transform: translateY(-50%); /* Center the container vertically */
+  position: absolute;
+  color: white;
   width: 100%;
-  transform: skewX(-30deg);
-  background: linear-gradient(45deg, 
-    rgba(255, 255, 255, 0.05) 25%, 
-    transparent 25%, 
-    transparent 50%, 
-    rgba(255, 255, 255, 0.05) 50%, 
-    rgba(255, 255, 255, 0.05) 75%, 
-    transparent 75%, 
-    transparent);
-  background-size: 60px 50px;
-  opacity: 0.3;
-  pointer-events: none;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
-
-
-
 .spins-left {
+  position: absolute;
   font-size: 1.2em;
   font-weight: bold;
   color: #333;
@@ -113,7 +83,7 @@ body::before {
   left: -3px;
   right: -3px;
   bottom: -3px;
-  background: linear-gradient(to right, rgb(12, 194, 12), rgb(198, 244, 198),rgb(12, 194, 12));
+  background: linear-gradient(to right, rgb(39, 168, 0), rgb(198, 244, 198),rgb(12, 194, 12));
   border-radius: 18px;
   z-index: -1;
 }
@@ -204,7 +174,6 @@ button {
 .reset-button {
   background-color: #f44336;
   color: white;
-  margin-top: 20px;
 }
 
 button:disabled {
@@ -295,18 +264,19 @@ button:disabled {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
-.rewards-page {
-  width: 100%;
-  max-width: 1500px;
+h3{
+  -webkit-text-stroke: #f1f0f0 0.5px;
+  color: transparent;
+  text-align: center;
+  margin: 0;
   padding: 20px;
-  margin: 0 auto;
+  font-family: 'Arial', sans-serif;
 }
-
 .rewards-container {
   display: flex;
+  justify-content: center; 
+  align-content: center;
   flex-direction: column;
-  gap: 20px;
-  padding: 20px;
   align-items: center;
 }
 
@@ -316,29 +286,18 @@ button:disabled {
 }
 
 .reward-card {
-  width: 100%;
-  max-width:1500px;
+  width: 70%;
+  max-width:1300px;
   margin: 0 auto;
 }
-.reward-header {
-  color: white;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.reward-icon {
-  font-size: 28px;
-}
-
 .reward-details {
+  top: 50%;
   color: #333;
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
   align-items: center;
-  gap: 15px;
+  gap: 10px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -347,9 +306,9 @@ button:disabled {
   width: 100%;
   max-width: 300px;
   margin: 0;
-  font-size: 1.2em;
+  font-weight: bold;
   text-align: center; 
-  padding: 10px 18px;
+  padding: 5px 10px;
   background: linear-gradient(to right, rgb(12, 194, 12), rgb(26, 226, 26), rgb(12, 194, 12));
   color: white;
   border-radius: 10px;

@@ -4,7 +4,7 @@ import symbolsData from "./data.json";
 
 const SlotGame = () => {
   const [users] = useState(symbolsData.users);
-  const [Typerewards] = useState(symbolsData.Typereward); // Correct key
+  const [Typerewards] = useState(symbolsData.Typereward);
   const [smallRewards, setSmallRewards] = useState(
     symbolsData["Type-reward"]["Small-Reward"]
   );
@@ -107,7 +107,6 @@ const SlotGame = () => {
 
     for (let i = currentSlot; i < currentSlot + currentSpinSlots; i++) {
       const result = await spinColumn(i); // Wait for the current column to finish spinning
-      spinResults.push(result);
 
       // Assign a random reward based on the spin count
       let reward;
@@ -118,20 +117,23 @@ const SlotGame = () => {
       } else if (spinCount === 1 && mediumRewards.length > 0) {
         const randomIndex = Math.floor(Math.random() * mediumRewards.length);
         reward = mediumRewards[randomIndex]; // Get a random medium reward
-        setMediumRewards((prev) => prev.filter((_, idx) => idx !== randomIndex)); // Remove the assigned reward
+        setMediumRewards((prev) =>
+          prev.filter((_, idx) => idx !== randomIndex)
+        ); // Remove the assigned reward
       } else if (spinCount === 2 && largeRewards.length > 0) {
         const randomIndex = Math.floor(Math.random() * largeRewards.length);
         reward = largeRewards[randomIndex]; // Get a random large reward
         setLargeRewards((prev) => prev.filter((_, idx) => idx !== randomIndex)); // Remove the assigned reward
       } else {
-        reward = { name: "No reward available" }; // Fallback reward if no rewards are left
+        reward = { name: "Default Reward" }; // Fallback reward if no rewards are left
       }
 
-      // Update the current results state to show only the current column's reward
-      setCurrentResults([{ user: result, reward }]);
+      // Add the result and reward to the spinResults array
+      const spinResult = { user: result, reward };
+      spinResults.push(spinResult);
 
-      // Introduce a delay before spinning the next column
-      await new Promise((resolve) => setTimeout(resolve, 500)); // 500ms delay
+      // Update the current results state to show the reward for the finished column
+      setCurrentResults((prevResults) => [...prevResults, spinResult]);
     }
 
     return spinResults;
@@ -227,130 +229,151 @@ const SlotGame = () => {
   const visibleSlots = slots.slice(currentSlot, currentSlot + currentSpinSlots);
 
   return (
-    <div className="slot-game w-screen ">
-      {!showRewards ? (
-        <>
-          <div className="type-reward ">
-            <h1 className="text-5xl font-bold mb-8 text-center">
-              Spin the Wheel
-            </h1>
-            {/* Rewards Section */}
-            <div className="rewards">
-              {currentResults.length > 0 && (
-                <div className="reward-card">
-                  <p className="reward-text">
-                    Congratulation You Won:{currentResults[0].reward?.name}
-                  </p>
-                </div>
-              )}
+    <>
+    <div className="grid">
+      
+    </div>
+    <div className="slot-game-container">
+        {!showRewards ? (
+          <>
+            <div className="type-reward  ">
+              <h1 className="text-5xl font-bold mb-8 text-center">
+                Spin the Wheel
+              </h1>
+              {/* Rewards Section */}
+              <div className="rewards">
+                {currentResults.length > 0 && (
+                  <div className="reward-card">
+                    {currentResults.map((result, index) => (
+                      <div key={index} className="reward-item">
+                        <p className="reward-user">
+                          <strong>{result.user?.name || "Unknown User"}</strong>{" "}
+                          ({result.user?.phone || "Unknown Phone"})
+                        </p>
+                        <p className="reward-text">
+                          Reward:{" "}
+                          <span className="reward-name">
+                            {result.reward?.name || "No reward"}
+                          </span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="reward-types flex justify-around mb-8">
+                {(Typerewards || []).map((reward, index) => (
+                  <div
+                    key={index}
+                    className="reward-type"
+                    style={{ backgroundColor: reward.color }}
+                  >
+                    <span className="reward-icon">{reward.icon}</span>
+                   
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="reward-types flex justify-around mb-8">
-              {(Typerewards || []).map((reward, index) => (
+            <div className="slots">
+              {visibleSlots.map((slot, index) => (
                 <div
                   key={index}
-                  className="reward-type"
-                  style={{ backgroundColor: reward.color }}
+                  className={`slot ${isSpinning ? "spinning" : ""}`}
                 >
-                  <span className="reward-icon">{reward.icon}</span>
-                  <p className="text-white">
-                    Congratulation!You won:{reward.name}
-                  </p>
+                  <div className="slot-content">
+                    <p className="slot-icon text-sm">{slot.name}</p>
+                    {slot.phone}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="buttons">
+              {!showSummary && (
+                <>
+                  {!showNext && !showRewardsButton && (
+                    <>
+                      <button
+                        className="stop-button bg-red-500 text-white p-2 rounded-md"
+                        onClick={stopSpin}
+                        disabled={!isSpinning}
+                      >
+                        Stop Spin
+                      </button>
+                      <div className="start">
+                        <button
+                          className="start-button"
+                          onClick={startSpin}
+                          disabled={
+                            isSpinning || startDisabled || spinCount >= 3
+                          }
+                        >
+                          Start
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  {showNext && (
+                    <button className="next-button" onClick={nextSpin}>
+                      Next Spin
+                    </button>
+                  )}
+                  {showRewardsButton && (
+                    <button
+                      className="rewards-button"
+                      onClick={() => setShowRewards(true)}
+                    >
+                      Show Rewards
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="rewards-page">
+            <h1 className="text-5xl font-bold ">Game Rewards</h1>
+            <div className="rewards-container">
+              {(allSpins || []).map((spin, index) => (
+                <div
+                  key={index}
+                  className="reward-card"
+                  style={{ borderColor: spin.rewardType?.color || "#ccc" }}
+                >
+                  <div
+                    className="reward-header flex"
+                   
+                  >
+
+                    <h3 className="w-full text-2xl font-semibold  text-center mb-2 mt-2">
+                      {spin.rewardType?.type || "Unknown Reward Type"}
+                    </h3>
+                  </div>
+                  <div className="reward-details flex">
+                    {(spin.results || []).map((result, index) => (
+                      <>
+                        <div key={index} className="reward-item">
+                          <p className="reward-user">
+                            <strong>{result.user?.name || "Unknown User"}</strong>{" "}
+                            ({result.user?.phone || "Unknown Phone"})
+                            <br />
+                            <p>
+                              Reward:{" "}
+                                {result.reward?.name || "No reward"}
+                            </p>
+                          </p>
+                        </div>
+                      </>
+                     
+                    )) || <p>No results available</p>}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="slots">
-            {visibleSlots.map((slot, index) => (
-              <div 
-                key={index} 
-                className={`slot ${isSpinning ? 'spinning' : ''}`}
-              >
-                <div className="slot-content">
-                  <p className="slot-icon text-sm">{slot.name}</p>
-                  {slot.phone}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="buttons">
-            {!showSummary && (
-              <>
-                {!showNext && !showRewardsButton && (
-                  <>
-                    <button
-                      className="stop-button bg-red-500 text-white p-2 rounded-md"
-                      onClick={stopSpin}
-                      disabled={!isSpinning}
-                    >
-                      Stop Spin
-                    </button>
-                    <div className="start">
-                      <button
-                        className="start-button"
-                        onClick={startSpin}
-                        disabled={isSpinning || startDisabled || spinCount >= 3}
-                      >
-                        Start
-                      </button>
-                    </div>
-                  </>
-                )}
-                {showNext && (
-                  <button className="next-button" onClick={nextSpin}>
-                    Next Spin
-                  </button>
-                )}
-                {showRewardsButton && (
-                  <button
-                    className="rewards-button"
-                    onClick={() => setShowRewards(true)}
-                  >
-                    Show Rewards
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        </>
-      ) : (
-        <div className="rewards-page">
-          <h1 className="text-5xl font-bold ">Game Rewards</h1>
-          <div className="rewards-container">
-            {(allSpins || []).map((spin, index) => (
-              <div
-                key={index}
-                className="reward-card"
-                style={{ borderColor: spin.rewardType.color }}
-              >
-                <div
-                  className="reward-header flex"
-                  style={{ backgroundColor: spin.rewardType.color }}
-                >
-                  <span className="reward-icon flex">
-                    {spin.rewardType.icon}
-                  </span>
-                  <h3 className="text-xl font-semibold mb-8">
-                    {spin.rewardType.type}
-                  </h3>
-                </div>
-                <div className="reward-details flex">
-                  {spin.results?.map((result, index) => (
-                    <p key={index}>
-                      {result.user.name} ({result.user.phone}) -{" "}
-                      {result.reward?.name || "No reward"}
-                    </p>
-                  )) || <p>No results available</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-          <button className="reset-button mt-8" onClick={startNewGame}>
-            Play Again
-          </button>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 };
 
