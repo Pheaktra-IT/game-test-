@@ -24,6 +24,9 @@ body, html {
   mask-image: linear-gradient(to bottom, transparent, black 70%);
   -webkit-mask-image: linear-gradient(to bottom, transparent, black 70%);
 }
+.creen-game{
+  display: flex;
+}
 .slot-game-container{
   top:50%;
   left: 0;

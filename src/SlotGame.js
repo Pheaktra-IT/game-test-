@@ -1,6 +1,8 @@
 // src/SlotGame.js
 import React, { useState, useEffect } from "react";
 import symbolsData from "./data.json";
+import { type } from "@testing-library/user-event/dist/type";
+import "./styles.css";
 
 const SlotGame = () => {
   const [users] = useState(symbolsData.users);
@@ -27,9 +29,24 @@ const SlotGame = () => {
   const [allSpins, setAllSpins] = useState([]);
   const [currentResults, setCurrentResults] = useState([]);
   const [completedSpins, setCompletedSpins] = useState([]);
-  const [currentSpinSlots, setCurrentSpinSlots] = useState(6); // Start with 6 slots
+  const [currentSpinSlots, setCurrentSpinSlots] = useState(6);
   const [showRewards, setShowRewards] = useState(false);
   const [showRewardsButton, setShowRewardsButton] = useState(false);
+  const [showWinnerPopup, setShowWinnerPopup] = useState(false);
+  const [currentWinner, setCurrentWinner] = useState(null);
+  const [spinInterval, setSpinInterval] = useState(null);
+  const [currentColumn, setCurrentColumn] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [currentColumnIndex, setCurrentColumnIndex] = useState(0);
+  const [isColumnSpinning, setIsColumnSpinning] = useState(false);
+
+  // Initialize slots with placeholder values
+  useEffect(() => {
+    if (!isInitialized) {
+      setSlots(Array(10).fill({ id: 0, name: "Placeholder", phone: "855 XXXXXXXXX" }));
+      setIsInitialized(true);
+    }
+  }, [isInitialized]);
 
   // Load history from local storage on component mount
   useEffect(() => {
@@ -47,16 +64,27 @@ const SlotGame = () => {
   const getSpinSlots = () => {
     switch (spinCount) {
       case 0:
-        return 6;
+        return {
+          type: "First Reward",
+          columnIndex: 6
+        };
       case 1:
-        return 3;
+        return {
+          type: "Second Reward",
+          columnIndex: 3
+        };
       case 2:
-        return 1;
+        return {
+          type: "Big Reward",
+          columnIndex: 1
+        };
       default:
-        return 0;
+        return {
+          type: "No Reward",
+          columnIndex: 0
+        };
     }
   };
-
   const getRewardType = (spinNumber) => {
     switch (spinNumber) {
       case 1:
@@ -80,30 +108,23 @@ const SlotGame = () => {
 
   const spinColumn = (columnIndex) => {
     return new Promise((resolve) => {
-      const spinInterval = setInterval(() => {
+      const interval = setInterval(() => {
         setSlots((prevSlots) => {
           const newSlots = [...prevSlots];
-          newSlots[columnIndex] =
-            users[Math.floor(Math.random() * users.length)]; // Assign a random user
+          newSlots[columnIndex] = users[Math.floor(Math.random() * users.length)];
           return newSlots;
         });
       }, 100);
 
-      setTimeout(() => {
-        clearInterval(spinInterval);
-        const result = users[Math.floor(Math.random() * users.length)];
-        setSlots((prevSlots) => {
-          const newSlots = [...prevSlots];
-          newSlots[columnIndex] = result; // Assign the final user
-          return newSlots;
-        });
-        resolve(result);
-      }, 3000); // Duration for each column to spin
+      setSpinInterval(interval);
+      setCurrentColumn(columnIndex);
+      setIsColumnSpinning(true);
     });
   };
 
   const spinAllColumns = async () => {
     const spinResults = [];
+    setCurrentResults([]); // Clear current results at the start
 
     for (let i = currentSlot; i < currentSlot + currentSpinSlots; i++) {
       const result = await spinColumn(i); // Wait for the current column to finish spinning
@@ -132,8 +153,8 @@ const SlotGame = () => {
       const spinResult = { user: result, reward };
       spinResults.push(spinResult);
 
-      // Update the current results state to show the reward for the finished column
-      setCurrentResults((prevResults) => [...prevResults, spinResult]);
+      // Update the current results state to show only the latest reward
+      setCurrentResults([spinResult]);
     }
 
     return spinResults;
@@ -189,27 +210,72 @@ const SlotGame = () => {
   };
 
   const startSpin = () => {
-    setStartDisabled(true);
-    spin();
+    if (!isSpinning && !startDisabled && spinCount < 3) {
+      setIsSpinning(true);
+      setStartDisabled(true);
+      setShowNext(false);
+      setShowRewardsButton(false);
+      setCurrentResults([]);
+      setCurrentColumnIndex(currentSlot);
+      spinColumn(currentSlot);
+    }
+  };
+
+  const stopCurrentColumn = () => {
+    if (spinInterval) {
+      clearInterval(spinInterval);
+      setSpinInterval(null);
+      setIsColumnSpinning(false);
+
+      const currentResult = slots[currentColumn];
+      let reward;
+
+      if (spinCount === 0 && smallRewards.length > 0) {
+        const randomIndex = Math.floor(Math.random() * smallRewards.length);
+        reward = smallRewards[randomIndex];
+        setSmallRewards((prev) => prev.filter((_, idx) => idx !== randomIndex));
+      } else if (spinCount === 1 && mediumRewards.length > 0) {
+        const randomIndex = Math.floor(Math.random() * mediumRewards.length);
+        reward = mediumRewards[randomIndex];
+        setMediumRewards((prev) => prev.filter((_, idx) => idx !== randomIndex));
+      } else if (spinCount === 2 && largeRewards.length > 0) {
+        const randomIndex = Math.floor(Math.random() * largeRewards.length);
+        reward = largeRewards[randomIndex];
+        setLargeRewards((prev) => prev.filter((_, idx) => idx !== randomIndex));
+      } else {
+        reward = { name: "Default Reward" };
+      }
+
+      const spinResult = { user: currentResult, reward };
+      setCurrentResults((prev) => [...prev, spinResult]);
+      setCurrentWinner(spinResult);
+      setShowWinnerPopup(true);
+
+      // Move to next column if available
+      if (currentColumnIndex < currentSlot + getSpinSlots().columnIndex - 1) {
+        setCurrentColumnIndex(prev => prev + 1);
+      } else {
+        // All columns are done
+        setShowNext(true);
+        setIsSpinning(false);
+      }
+    }
   };
 
   const stopSpin = () => {
-    setIsSpinning(false);
+    stopCurrentColumn();
+  };
+
+  const closeWinnerPopup = () => {
+    setShowWinnerPopup(false);
+    setCurrentWinner(null);
+    if (isSpinning && currentColumnIndex < currentSlot + getSpinSlots().columnIndex - 1) {
+      spinColumn(currentColumnIndex + 1);
+    }
   };
 
   const startNewGame = () => {
-    setSlots([
-      "855 XXXXXXXXX",
-      "855 XXXXXXXXX",
-      "855 XXXXXXXXX",
-      "855 XXXXXXXXX",
-      "855 XXXXXXXXX",
-      "855 XXXXXXXXX",
-      "855 XXXXXXXXX",
-      "855 XXXXXXXXX",
-      "855 XXXXXXXXX",
-      "855 XXXXXXXXX",
-    ]);
+    setSlots(Array(10).fill({ id: 0, name: "Placeholder", phone: "855 XXXXXXXXX" }));
     setHistory([]);
     setSpinCount(0);
     setShowSummary(false);
@@ -223,44 +289,62 @@ const SlotGame = () => {
     setCurrentSpinSlots(6);
     setShowRewards(false);
     setShowRewardsButton(false);
-    localStorage.removeItem("slotGameHistory"); // Clear local storage
+    setShowWinnerPopup(false);
+    setCurrentWinner(null);
+    setSpinInterval(null);
+    setCurrentColumn(0);
+    localStorage.removeItem("slotGameHistory");
   };
 
   const visibleSlots = slots.slice(currentSlot, currentSlot + currentSpinSlots);
 
   return (
     <>
-    <div className="grid">
-      
-    </div>
-    <div className="slot-game-container">
+      {showWinnerPopup && currentWinner && (
+        <div className="winner-popup-overlay">
+          <div className="winner-popup">
+            <div className="winner-header">
+              <h2 className="winner-title">Winner!</h2>
+              <div className="winner-type">{getSpinSlots().type}</div>
+            </div>
+            <div className="winner-card">
+              <div className="winner-avatar">
+                <span className="avatar-icon">👤</span>
+              </div>
+              <div className="winner-details">
+                <div className="winner-info">
+                  <span className="info-label">Name:</span>
+                  <span className="info-value">{currentWinner.user?.name || "Unknown User"}</span>
+                </div>
+                <div className="winner-info">
+                  <span className="info-label">Phone:</span>
+                  <span className="info-value">{currentWinner.user?.phone || "Unknown Phone"}</span>
+                </div>
+                <div className="winner-info">
+                  <span className="info-label">Reward:</span>
+                  <span className="info-value reward-name">{currentWinner.reward?.name || "No reward"}</span>
+                </div>
+              </div>
+            </div>
+            <button
+              className="close-popup-button"
+              onClick={closeWinnerPopup}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="grid">
+
+      </div>
+      <div className="slot-game-container">
         {!showRewards ? (
           <>
-            <div className="type-reward  ">
+            <div className="type-reward">
               <h1 className="text-5xl font-bold mb-8 text-center">
-                Spin the Wheel
+                {getSpinSlots().type}
               </h1>
-              {/* Rewards Section */}
-              <div className="rewards">
-                {currentResults.length > 0 && (
-                  <div className="reward-card">
-                    {currentResults.map((result, index) => (
-                      <div key={index} className="reward-item">
-                        <p className="reward-user">
-                          <strong>{result.user?.name || "Unknown User"}</strong>{" "}
-                          ({result.user?.phone || "Unknown Phone"})
-                        </p>
-                        <p className="reward-text">
-                          Reward:{" "}
-                          <span className="reward-name">
-                            {result.reward?.name || "No reward"}
-                          </span>
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
               <div className="reward-types flex justify-around mb-8">
                 {(Typerewards || []).map((reward, index) => (
                   <div
@@ -269,7 +353,7 @@ const SlotGame = () => {
                     style={{ backgroundColor: reward.color }}
                   >
                     <span className="reward-icon">{reward.icon}</span>
-                   
+
                   </div>
                 ))}
               </div>
@@ -342,7 +426,7 @@ const SlotGame = () => {
                 >
                   <div
                     className="reward-header flex"
-                   
+
                   >
 
                     <h3 className="w-full text-2xl font-semibold  text-center mb-2 mt-2">
@@ -359,12 +443,12 @@ const SlotGame = () => {
                             <br />
                             <p>
                               Reward:{" "}
-                                {result.reward?.name || "No reward"}
+                              {result.reward?.name || "No reward"}
                             </p>
                           </p>
                         </div>
                       </>
-                     
+
                     )) || <p>No results available</p>}
                   </div>
                 </div>
@@ -373,6 +457,7 @@ const SlotGame = () => {
           </div>
         )}
       </div>
+
     </>
   );
 };
