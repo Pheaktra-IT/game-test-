@@ -106,9 +106,20 @@ const SlotGame = () => {
     }
   };
 
+  // Helper to get number of columns for each spin
+  const getSpinColumns = () => {
+    switch (spinCount) {
+      case 0: return 6;
+      case 1: return 3;
+      case 2: return 1;
+      default: return 0;
+    }
+  };
+
+  // Spins a single column and stops after a short time
   const spinColumn = (columnIndex) => {
     return new Promise((resolve) => {
-      const interval = setInterval(() => {
+      let interval = setInterval(() => {
         setSlots((prevSlots) => {
           const newSlots = [...prevSlots];
           newSlots[columnIndex] = users[Math.floor(Math.random() * users.length)];
@@ -116,120 +127,27 @@ const SlotGame = () => {
         });
       }, 100);
 
-      setSpinInterval(interval);
-      setCurrentColumn(columnIndex);
-      setIsColumnSpinning(true);
+      setTimeout(() => {
+        clearInterval(interval);
+        // Pick the final user for this column
+        setSlots((prevSlots) => {
+          const newSlots = [...prevSlots];
+          newSlots[columnIndex] = users[Math.floor(Math.random() * users.length)];
+          return newSlots;
+        });
+        resolve(columnIndex);
+      }, 1200 + Math.random() * 800); // Randomize stop time a bit
     });
   };
 
+  // Spins all columns for the current spin
   const spinAllColumns = async () => {
+    const columns = getSpinColumns();
     const spinResults = [];
-    setCurrentResults([]); // Clear current results at the start
-
-    for (let i = currentSlot; i < currentSlot + currentSpinSlots; i++) {
-      const result = await spinColumn(i); // Wait for the current column to finish spinning
-
-      // Assign a random reward based on the spin count
+    for (let i = 0; i < columns; i++) {
+      await spinColumn(currentSlot + i);
+      // Assign reward
       let reward;
-      if (spinCount === 0 && smallRewards.length > 0) {
-        const randomIndex = Math.floor(Math.random() * smallRewards.length);
-        reward = smallRewards[randomIndex]; // Get a random small reward
-        setSmallRewards((prev) => prev.filter((_, idx) => idx !== randomIndex)); // Remove the assigned reward
-      } else if (spinCount === 1 && mediumRewards.length > 0) {
-        const randomIndex = Math.floor(Math.random() * mediumRewards.length);
-        reward = mediumRewards[randomIndex]; // Get a random medium reward
-        setMediumRewards((prev) =>
-          prev.filter((_, idx) => idx !== randomIndex)
-        ); // Remove the assigned reward
-      } else if (spinCount === 2 && largeRewards.length > 0) {
-        const randomIndex = Math.floor(Math.random() * largeRewards.length);
-        reward = largeRewards[randomIndex]; // Get a random large reward
-        setLargeRewards((prev) => prev.filter((_, idx) => idx !== randomIndex)); // Remove the assigned reward
-      } else {
-        reward = { name: "Default Reward" }; // Fallback reward if no rewards are left
-      }
-
-      // Add the result and reward to the spinResults array
-      const spinResult = { user: result, reward };
-      spinResults.push(spinResult);
-
-      // Update the current results state to show only the latest reward
-      setCurrentResults([spinResult]);
-    }
-
-    return spinResults;
-  };
-
-  const spin = () => {
-    if (isSpinning || spinCount >= 3) return;
-
-    setIsSpinning(true);
-    setShowNext(false);
-    setShowRewardsButton(false);
-
-    spinAllColumns().then((spinResults) => {
-      setCurrentResults(spinResults);
-      setIsSpinning(false);
-
-      const rewardType = getRewardType(spinCount + 1);
-      const spinRecord = {
-        spinNumber: spinCount + 1,
-        slots: currentSpinSlots,
-        startSlot: currentSlot + 1,
-        endSlot: currentSlot + currentSpinSlots,
-        results: spinResults || [], // Ensure results is always an array
-        rewardType: rewardType,
-      };
-
-      setHistory((prev) => [...prev, spinRecord]); // Save spin record to history
-      setCompletedSpins((prev) => [...prev, spinRecord]);
-
-      const newSpinCount = spinCount + 1;
-      setSpinCount(newSpinCount);
-
-      if (newSpinCount >= 3) {
-        setAllSpins((prev) => [...prev, ...completedSpins, spinRecord]);
-        setCompletedSpins([]);
-        setShowRewardsButton(true);
-      } else {
-        setShowNext(true);
-      }
-    });
-  };
-
-  const nextSpin = () => {
-    setShowNext(false);
-    setStartDisabled(false);
-    setCurrentSlot((prev) => prev + currentSpinSlots);
-    setCurrentResults([]);
-    // Move completed spins to allSpins when clicking Next
-    setAllSpins((prev) => [...prev, ...completedSpins]);
-    setCompletedSpins([]);
-    // Update the number of slots for the next spin
-    setCurrentSpinSlots(getSpinSlots());
-  };
-
-  const startSpin = () => {
-    if (!isSpinning && !startDisabled && spinCount < 3) {
-      setIsSpinning(true);
-      setStartDisabled(true);
-      setShowNext(false);
-      setShowRewardsButton(false);
-      setCurrentResults([]);
-      setCurrentColumnIndex(currentSlot);
-      spinColumn(currentSlot);
-    }
-  };
-
-  const stopCurrentColumn = () => {
-    if (spinInterval) {
-      clearInterval(spinInterval);
-      setSpinInterval(null);
-      setIsColumnSpinning(false);
-
-      const currentResult = slots[currentColumn];
-      let reward;
-
       if (spinCount === 0 && smallRewards.length > 0) {
         const randomIndex = Math.floor(Math.random() * smallRewards.length);
         reward = smallRewards[randomIndex];
@@ -245,55 +163,93 @@ const SlotGame = () => {
       } else {
         reward = { name: "Default Reward" };
       }
-
-      const spinResult = { user: currentResult, reward };
-      setCurrentResults((prev) => [...prev, spinResult]);
-      setCurrentWinner(spinResult);
-      setShowWinnerPopup(true);
-
-      // Move to next column if available
-      if (currentColumnIndex < currentSlot + getSpinSlots().columnIndex - 1) {
-        setCurrentColumnIndex(prev => prev + 1);
-      } else {
-        // All columns are done
-        setShowNext(true);
-        setIsSpinning(false);
-      }
+      const user = slots[currentSlot + i];
+      spinResults.push({ user, reward });
     }
+    setCurrentResults(spinResults);
+    return spinResults;
   };
 
-  const stopSpin = () => {
-    stopCurrentColumn();
+  const spin = () => {
+    if (isSpinning || spinCount >= 3) return;
+
+    setIsSpinning(true);
+    setShowNext(false);
+    setShowRewardsButton(false);
+    setCurrentResults([]);
+    // Spin all columns
+    spinAllColumns().then((spinResults) => {
+      // Save results
+      const rewardType = getRewardType(spinCount + 1);
+      const spinRecord = {
+        spinNumber: spinCount + 1,
+        slots: getSpinColumns(),
+        startSlot: currentSlot + 1,
+        endSlot: currentSlot + getSpinColumns(),
+        results: spinResults,
+        rewardType: rewardType,
+      };
+
+      setHistory((prev) => [...prev, spinRecord]);
+      setCompletedSpins((prev) => [...prev, spinRecord]);
+      const newSpinCount = spinCount + 1;
+      setSpinCount(newSpinCount);
+      if (newSpinCount >= 3) {
+        setAllSpins((prev) => [...prev, ...completedSpins, spinRecord]);
+        setCompletedSpins([]);
+        setShowRewardsButton(true);
+      } else {
+        setShowNext(true);
+      }
+      setIsSpinning(false);
+    });
+  };
+
+  const nextSpin = () => {
+    setShowNext(false);
+    setStartDisabled(false);
+    setCurrentSlot((prev) => prev + getSpinColumns());
+    setCurrentResults([]);
+    setAllSpins((prev) => [...prev, ...completedSpins]);
+    setCompletedSpins([]);
+    setCurrentSpinSlots(getSpinColumns());
+  };
+
+  const startSpin = async () => {
+    if (isSpinning || spinCount >= 3) return;
+    setIsSpinning(true);
+    setShowNext(false);
+    setShowRewardsButton(false);
+    setCurrentResults([]);
+    // Spin all columns
+    const spinResults = await spinAllColumns();
+    // Save results
+    const rewardType = getRewardType(spinCount + 1);
+    const spinRecord = {
+      spinNumber: spinCount + 1,
+      slots: getSpinColumns(),
+      startSlot: currentSlot + 1,
+      endSlot: currentSlot + getSpinColumns(),
+      results: spinResults,
+      rewardType: rewardType,
+    };
+    setHistory((prev) => [...prev, spinRecord]);
+    setCompletedSpins((prev) => [...prev, spinRecord]);
+    const newSpinCount = spinCount + 1;
+    setSpinCount(newSpinCount);
+    if (newSpinCount >= 3) {
+      setAllSpins((prev) => [...prev, ...completedSpins, spinRecord]);
+      setCompletedSpins([]);
+      setShowRewardsButton(true);
+    } else {
+      setShowNext(true);
+    }
+    setIsSpinning(false);
   };
 
   const closeWinnerPopup = () => {
     setShowWinnerPopup(false);
     setCurrentWinner(null);
-    if (isSpinning && currentColumnIndex < currentSlot + getSpinSlots().columnIndex - 1) {
-      spinColumn(currentColumnIndex + 1);
-    }
-  };
-
-  const startNewGame = () => {
-    setSlots(Array(10).fill({ id: 0, name: "Placeholder", phone: "855 XXXXXXXXX" }));
-    setHistory([]);
-    setSpinCount(0);
-    setShowSummary(false);
-    setIsSpinning(false);
-    setCurrentSlot(0);
-    setStartDisabled(false);
-    setShowNext(false);
-    setAllSpins([]);
-    setCurrentResults([]);
-    setCompletedSpins([]);
-    setCurrentSpinSlots(6);
-    setShowRewards(false);
-    setShowRewardsButton(false);
-    setShowWinnerPopup(false);
-    setCurrentWinner(null);
-    setSpinInterval(null);
-    setCurrentColumn(0);
-    localStorage.removeItem("slotGameHistory");
   };
 
   const visibleSlots = slots.slice(currentSlot, currentSlot + currentSpinSlots);
@@ -353,7 +309,6 @@ const SlotGame = () => {
                     style={{ backgroundColor: reward.color }}
                   >
                     <span className="reward-icon">{reward.icon}</span>
-
                   </div>
                 ))}
               </div>
@@ -375,28 +330,27 @@ const SlotGame = () => {
             <div className="buttons">
               {!showSummary && (
                 <>
-                  {!showNext && !showRewardsButton && (
-                    <>
-                      <button
-                        className="stop-button bg-red-500 text-white p-2 rounded-md"
-                        onClick={stopSpin}
-                        disabled={!isSpinning}
-                      >
-                        Stop Spin
-                      </button>
-                      <div className="start">
-                        <button
-                          className="start-button"
-                          onClick={startSpin}
-                          disabled={
-                            isSpinning || startDisabled || spinCount >= 3
-                          }
-                        >
-                          Start
-                        </button>
-                      </div>
-                    </>
-                  )}
+                  {/* Remove Stop Spin button since stopSpin is not defined */}
+                  {/* 
+                  <button
+                    className="stop-button bg-red-500 text-white p-2 rounded-md"
+                    onClick={stopSpin}
+                    disabled={!isSpinning}
+                  >
+                    Stop Spin
+                  </button>
+                  */}
+                  <div className="start">
+                    <button
+                      className="start-button"
+                      onClick={startSpin}
+                      disabled={
+                        isSpinning || startDisabled || spinCount >= 3
+                      }
+                    >
+                      Start
+                    </button>
+                  </div>
                   {showNext && (
                     <button className="next-button" onClick={nextSpin}>
                       Next Spin
